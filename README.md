@@ -471,3 +471,109 @@ export HADOOP_IDENT_STRING=$USER
 > slave2
 
 * 把hadoop文件传给slave1，slave2的机子
+
+## zookeeper安装
+* 1.传输进`home`目录
+* 2.解压:`tar -zxvf zookeeper-3.4.13.tar.gz`
+* 3.编辑配置文件
+
+- 1.进入conf目录
+  `cd zookeeper-3.4.13/conf`
+
+- 2.将zoo_sample.cfg这个文件改名为zoo.cfg (必须是这个文件名)
+
+  `mv  zoo_sample.cfg zoo.cfg`
+- 3.进入zoo.cfg进行编辑
+`vim zoo.cfg`
+- 4.按i进入编辑模式，修改以下内容:
+`
+dataDir=/tmp/zookeeper/data
+dataLogDir=/tmp/zookeeper/log
+`
+
+>  注意：如果想配置集群的话，请在clientPort下面添加服务器的ip。如
+>
+> server.1=192.168.180.132:2888:3888
+> server.2=192.168.180.133:2888:3888
+>
+> server.3=192.168.180.134:2888:3888
+> 如果电脑内存比较小，zookeeper还可以设置成伪集群。也就是全部服务器采用同一个ip，但是使用不同的端口。
+
+* 5.在tmp目录创建目录。
+
+> *mkdir /tmp/zookeeper*
+>
+> mkdir /tmp/zookeeper/data
+>
+> mkdir /tmp/zookeeper/log*
+
+* 6.如果是配置集群，还需要在前面配置过的dataDir路径下新增myid文件
+
+> cd /tmp/zookeeper/data
+>
+> touch myid
+>
+> vim myid
+
+> 在data目录下创建文件，文件名为“myid”, 编辑该“myid”文件，并在对应的IP的机器上输入对应的编号。
+> 如在192.168.180.132上，“myid”文件内容就是1。在192.168.180.133上，内容就是2。
+
+### 配置环境变量
+
+> export ZOOKEEPER_INSTALL=/usr/local/zookeeper-3.4.13/
+> export PATH=$PATH:$ZOOKEEPER_INSTALL/bin
+
+* 记住更新环境变量
+
+### 启动zookeeper
+
+> 1.进入bin目录，并启动zookeep。如果不是在bin目录下执行，启动zookeeper时会报错：
+>
+>  bash: ./zkServer.sh: No such file or directory
+
+* 注意： ./zkServer.sh start前面的 . 不可忽略。
+
+> 查看状态
+>
+> zkServer.sh status
+
+## Hadoop初始化操作
+
+先启动**journaldata**服务（每个节点上都要操作）
+
+先启动zookeeper的bin目录启动**zookeeper**
+
+进入**Hadoop**的**sbin**目录下（每个节点都要进入）
+
+> hadoop-daemon.sh start journalnode（三台都要）  
+
+* master节点格式化namenode（仅用一次)
+
+* 先进入到hadoop目录下的**bin**目录
+
+> hdfs namenode -format
+
+* master节点 格式zkfc
+
+> bin/hdfs zkfc dformatZK
+> bin/hdfs zkfc -formatZK（注意一定要手打命令，不然可能会报错）  
+
+* 启动master节点namenode
+
+> bin/hdfs namenode
+
+启动后切换到slave01节点，等slave02节点同步后，就用ctrl+c组合键强制停止（同步命令看下一步骤）
+slave01节点同步master节点元数据信息
+
+> bin/hdfs namenode -bootstrapStandby  
+
+* 关闭journaldata服务，每个节点都要操作  
+
+> sbin/hadoop-daemon.sh stop(三个节点都要操作)
+
+* 一键启动HDFS
+
+> sbin/start-dfs.sh
+
+> Zookeeper、Hadoop 配置完毕后，在master节点启动Hadoop，并查看服务进程状态
+> 使用jps命令查看进程  
