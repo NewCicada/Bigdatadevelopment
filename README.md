@@ -577,3 +577,78 @@ slave01节点同步master节点元数据信息
 
 > Zookeeper、Hadoop 配置完毕后，在master节点启动Hadoop，并查看服务进程状态
 > 使用jps命令查看进程  
+
+# 安装MYSQL
+
+* 先将安装包传输上去
+* 1.先卸载mysql-libs(如果之前安装过MYSQL，要全都卸载掉)
+
+> rpm -qa  |  grep -i -E mysql\|mariadb | xargs -n1 sudo rpm -e --nodeps
+
+* 安装依赖
+
+> rpm -ivh 01_mysql-community-common-5.7.16-1.el7.x86_64.rpm 
+
+> rpm -ivh 02_mysql-community-libs-5.7.16-1.el7.x86_64.rpm 
+
+> rpm -ivh 03_mysql-community-libs-compat-5.7.16-1.el7.x86_64.rpm
+
+> rpm -ivh 04_mysql-community-client-5.7.16-1.el7.x86_64.rpm 
+
+> sudo rpm -ivh 05_mysql-community-server-5.7.16-1.el7.x86_64.rpm 
+
+**注意:如果报如下错误，这是由于yum安装了旧版本的GPG keys所造成，从rpm版本4.1后，在安装或升级软件包时会自动检查软件包的签名。**
+
+#### 解决办法
+
+> sudo rpm -ivh 05_mysql-community-server-5.7.16-1.el7.x86_64.rpm --force --nodeps
+
+* 启动MYSQL
+
+> systemctl start mysqld
+
+* 查看状态
+
+> service mysql status
+
+* 自启动
+
+> chkconfig --list mysql
+
+* 停止
+
+> service mysql stop
+
+* 重启
+
+> service mysql **restart**
+
+* 成功启动mysql
+* 获取临时登录密码
+
+> grep 'temporary password' /var/log/mysqld.log（红线是临时密码）
+
+* 启动MYSQL
+
+> mysql -u root -p
+>
+> 回车输入临时登录密码
+
+* 成功启动mysql
+* 首先进入到MSQL里面，进行修改密码
+
+> set global validate_password_policy=0;（修改密码强度为0，即可以不用密码就进入）
+
+> set global validate_password_length=1;（修改密码长度为1，就是指密码最少为一位数）
+
+> create 'root'@'% identified by `root123`; （我这里修改的密码为root123，为了和之前的hive-site.xml文件配置的密码一样）
+
+* 如果有以下提示
+
+> ERROR 1820 (HY000): You must reset your password using ALTER USER statement before executing this statement.
+
+* 这是因为我们用初始密码登录，需要修改密码后才能操作
+
+* 根据提示，我们可以使用ALTER USER命令来修改当前用户的密码
+
+> ALTER USER root@localhost identified by '你的新密码';
