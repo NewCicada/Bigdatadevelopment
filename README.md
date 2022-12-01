@@ -652,3 +652,103 @@ slave01节点同步master节点元数据信息
 * 根据提示，我们可以使用ALTER USER命令来修改当前用户的密码
 
 > ALTER USER root@localhost identified by '你的新密码';
+>
+> flush privileges;（更新配置，并立即生效）
+
+# 安装hive
+
+* 下载所需版本的hive
+* 下载后进行解压
+
+> tar -zxvf hive-1.1.0-cdh5.15.2.tar.gz
+
+* 配置环境变量
+
+  > vim /etc/profile
+
+* 添加环境变量
+
+> export HIVE_HOME=/home/hive
+>
+> export PATH=$HIVE_HOME/bin:$PATH
+
+使得配置的环境变量立即生效：
+
+> source /etc/profile
+
+### 修改配置
+
+**1. hive-env.sh**
+
+  进入安装目录下的 `conf/` 目录，拷贝 Hive 的环境配置模板 `flume-env.sh.template`
+
+```shell
+cp hive-env.sh.template hive-env.shCopy to clipboardErrorCopied
+```
+
+  修改 `hive-env.sh`，指定 Hadoop 的安装路径：
+
+```shell
+export HADOOP_HOME=/usr/app/hadoop-2.6.0-cdh5.15.2
+export HIVE_CONF_DIR=/opt/module/hive/confCopy to clipboardErrorCopied
+```
+
+**2. hive-site.xml**
+
+  新建 `hive-site.xml` 文件，内容如下，主要是配置存放元数据的 `MySQL` 的地址、驱动、用户名和密码等信息：
+
+  **前提是已经安装好Mysql**
+
+```xml
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:mysql://master:3306/hadoop_hive?createDatabaseIfNotExist=true</value>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>com.mysql.jdbc.Driver</value>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>root</value>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>123455</value>
+  </property>
+
+</configuration>
+```
+
+### [（4）拷贝数据库驱动](http://martinhub.gitee.io/martinhub-notes/#/./notes/01-大数据相关技术栈/04-Hive/README?id=（4）拷贝数据库驱动)
+
+* 将 MySQL 驱动包拷贝到 Hive 安装目录的 `lib` 目录下, MySQL 驱动的下载地址为：https://dev.mysql.com/downloads/connector/j/
+
+### [（5）初始化元数据库](http://martinhub.gitee.io/martinhub-notes/#/./notes/01-大数据相关技术栈/04-Hive/README?id=（5）初始化元数据库)
+
+- 当使用的 hive 是 1.x 版本时，可以不进行初始化操作，Hive 会在第一次启动的时候会自动进行初始化，但不会生成所有的元数据信息表，只会初始化必要的一部分，在之后的使用中用到其余表时会自动创建；
+
+- 当使用的 hive 是 2.x 版本时，必须手动初始化元数据库。初始化命令：
+
+  ```shell
+  # schematool 命令在安装目录的 bin 目录下，由于上面已经配置过环境变量，在任意位置执行即可
+  schematool -dbType mysql -initSchema
+   (要是报错 显示未到命令)
+  进到hive bin目录
+  ./schematool -initSchema -dbType mysql
+  ```
+
+### [（6）启动](http://martinhub.gitee.io/martinhub-notes/#/./notes/01-大数据相关技术栈/04-Hive/README?id=（6）启动)
+
+  由于已经将 Hive 的 bin 目录配置到环境变量，直接使用以下命令启动，成功进入交互式命令行后执行 `show databases` 命令，无异常则代表搭建成功。
+
+> hive
+
+> 在 Mysql 中也能看到 Hive 创建的库和存放元数据信息的表
