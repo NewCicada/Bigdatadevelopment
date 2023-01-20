@@ -752,3 +752,10 @@ export HIVE_CONF_DIR=/opt/module/hive/confCopy to clipboardErrorCopied
 > hive
 
 > 在 Mysql 中也能看到 Hive 创建的库和存放元数据信息的表
+
+# hive启动失败
+
+hive卡在启动界面，true一直后没有信息或者报错，同时hadoop的web端无法访问。
+原因：在配置hdfs高可用时，发现所有的namenode都是standby状态，需要手动启动一次namenode : hdfs haadmin -transitionToActive nn1 --forcemanual
+之后再配置自动故障转移机制，就会随机启动一个namenode。
+最后，hadoop的web端就可以正常访问，hive也可以正常启动了。
